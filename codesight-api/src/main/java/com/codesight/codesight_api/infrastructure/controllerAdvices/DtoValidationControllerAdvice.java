@@ -1,8 +1,5 @@
 package com.codesight.codesight_api.infrastructure.controllerAdvices;
 import com.codesight.codesight_api.infrastructure.exceptions.ApiError;
-import com.codesight.codesight_api.infrastructure.utils.ExceptionUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -38,10 +38,10 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     @Override
     public ArrayList<ChallengeGetDto> get() {
-        Pageable firstPageWithTwoChallenges = PageRequest.of(0,2);
-        Page<Challenge> allChallenges = challengeRepository.findAll(firstPageWithTwoChallenges);
+        Pageable firstPageWithTwoChallenges = PageRequest.of(0,10);
+        Page<Challenge> neededChallenges = challengeRepository.findAll(firstPageWithTwoChallenges);
         ArrayList<Challenge> challenges = new ArrayList<>();
-        allChallenges.forEach(challenges::add);
+        neededChallenges.forEach(challenges::add);
         return challengeMapper.mapChallengeListToChallengeGetDtoList(challenges);
     }
 

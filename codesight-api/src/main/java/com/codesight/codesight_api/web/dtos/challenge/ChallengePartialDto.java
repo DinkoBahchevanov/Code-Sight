@@ -7,18 +7,16 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-public class ChallengePostDto {
-
-    private String name;
+public class ChallengePartialDto {private String name;
     private String description;
     private Difficulty difficulty;
     private Integer points;
 
-    public ChallengePostDto() {
+    public ChallengePartialDto() {
 
     }
 
-    public ChallengePostDto(String name, String description, Difficulty difficulty, int points) {
+    public ChallengePartialDto(String name, String description, Difficulty difficulty, int points) {
         this.name = name;
         this.description = description;
         this.difficulty = difficulty;

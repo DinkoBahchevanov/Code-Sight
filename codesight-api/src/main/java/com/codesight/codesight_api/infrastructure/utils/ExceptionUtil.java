@@ -14,13 +14,13 @@ public final class ExceptionUtil {
 
     }
 
-    public static Map<String, Object> getBody(Exception ex, HttpStatus status) {
+    public static Map<String, Object> getBody(Exception ex, HttpStatus status, String path) {
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", status.value());
         body.put("error", ex.getMessage());
-        body.put("path", "api/v1/challenges");
+        body.put("path", path);
         return body;
     }
 }

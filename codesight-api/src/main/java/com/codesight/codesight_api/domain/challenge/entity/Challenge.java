@@ -21,7 +21,7 @@ public class Challenge extends BaseEntity {
     private Difficulty difficulty;
     private int points;
 
-    @Column
+    @Column(unique = true)
     @NotNull
     @Size(min = 2, max = 100, message = "Challenge name should be between 2 and 100 characters")
     public String getName() {

@@ -1,6 +1,9 @@
-package com.codesight.codesight_api.web.dtos.challenge;
+package com.codesight.codesight_api.web.mappers;
 
 import com.codesight.codesight_api.domain.challenge.entity.Challenge;
+import com.codesight.codesight_api.web.dtos.challenge.ChallengeGetDto;
+import com.codesight.codesight_api.web.dtos.challenge.ChallengePartialDto;
+import com.codesight.codesight_api.web.dtos.challenge.ChallengePostDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
@@ -25,5 +28,11 @@ public interface ChallengeMapper {
     })
     ChallengeGetDto mapChallengeToChallengeGetDto(Challenge challenge);
 
+    @Mappings({
+            @Mapping(target="name", source="challengePartialDto.name"),
+            @Mapping(target="description", source="challengePartialDto.description"),
+            @Mapping(target="difficulty", source="challengePartialDto.difficulty"),
+            @Mapping(target="points", source="challengePartialDto.points")
+    })
     ArrayList<ChallengeGetDto> mapChallengeListToChallengeGetDtoList(ArrayList<Challenge> challenges);
 }

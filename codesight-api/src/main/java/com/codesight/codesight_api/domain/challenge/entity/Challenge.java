@@ -1,7 +1,9 @@
 package com.codesight.codesight_api.domain.challenge.entity;
 
 import com.codesight.codesight_api.domain.BaseEntity;
-import com.sun.istack.NotNull;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.*;
 
 import javax.persistence.Column;
@@ -11,9 +13,6 @@ import javax.validation.constraints.Size;
 
 @Entity
 @Table
-@AllArgsConstructor
-@NoArgsConstructor
-@RequiredArgsConstructor
 public class Challenge extends BaseEntity {
 
     private String name;
@@ -32,25 +31,26 @@ public class Challenge extends BaseEntity {
     }
 
     @Column(unique = true)
-    @NotNull
+    @NotNull(message = "Challenge name cannot be null")
     @Size(min = 2, max = 100, message = "Challenge name should be between 2 and 100 characters")
     public String getName() {
         return name;
     }
 
     @Column
-    @NotNull
+    @NotNull(message = "Description cannot be null")
     public String getDescription() {
         return description;
     }
 
     @Column
+    @NotNull(message = "Difficulty cannot be null")
     public Difficulty getDifficulty() {
         return difficulty;
     }
 
     @Column
-    @NotNull
+    @NotNull(message = "Points cannot be null")
     public int getPoints() {
         return points;
     }

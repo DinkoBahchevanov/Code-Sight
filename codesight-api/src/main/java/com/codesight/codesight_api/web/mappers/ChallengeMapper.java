@@ -8,7 +8,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 
-import java.util.ArrayList;
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ChallengeMapper {
@@ -34,5 +34,5 @@ public interface ChallengeMapper {
             @Mapping(target="difficulty", source="challengePartialDto.difficulty"),
             @Mapping(target="points", source="challengePartialDto.points")
     })
-    ArrayList<ChallengeGetDto> mapChallengeListToChallengeGetDtoList(ArrayList<Challenge> challenges);
+    List<ChallengeGetDto> mapChallengeListToChallengeGetDtoList(List<Challenge> challenges);
 }

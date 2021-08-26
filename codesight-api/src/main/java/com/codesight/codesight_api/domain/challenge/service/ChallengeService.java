@@ -1,18 +1,16 @@
 package com.codesight.codesight_api.domain.challenge.service;
 
+import com.codesight.codesight_api.domain.challenge.entity.Challenge;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengeGetDto;
-import com.codesight.codesight_api.web.dtos.challenge.ChallengePartialDto;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengePostDto;
 import com.github.fge.jsonpatch.JsonPatch;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
 
-import java.util.ArrayList;
-import java.util.Optional;
+import java.util.List;
 
 public interface ChallengeService {
 
-    ArrayList<ChallengeGetDto> get();
+    Page<ChallengeGetDto> get(int pageNumber, int pageSize, String sortBy, String direction);
 
     ChallengeGetDto create(ChallengePostDto challengeRequestDto);
 

@@ -29,8 +29,10 @@ public class ChallengeController {
 
     @GetMapping
     @ResponseBody
-    ResponseEntity<ArrayList<ChallengeGetDto>> get() {
-        return new ResponseEntity(challengeService.get(), HttpStatus.OK);
+    ResponseEntity<ArrayList<ChallengeGetDto>> get(@RequestParam(defaultValue = "0") Integer pageNo,
+                                                   @RequestParam(defaultValue = "10") Integer pageSize, @RequestParam(defaultValue = "id") String sortBy,
+                                                   @RequestParam String direction) {
+        return new ResponseEntity(challengeService.get(pageNo, pageSize, sortBy, direction), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
@@ -47,8 +49,8 @@ public class ChallengeController {
 
     @DeleteMapping("/{id}")
     ResponseEntity<HttpStatus> delete(@PathVariable int id) {
-       challengeService.delete(id);
-       return new ResponseEntity(HttpStatus.NO_CONTENT);
+        challengeService.delete(id);
+        return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
 
     @PutMapping("/{id}")
@@ -59,7 +61,7 @@ public class ChallengeController {
 
     @PatchMapping(value = "/{id}", consumes = "application/json-patch+json")
     @Operation(description = "Updates an existing user", summary = "Updates an existing user")
-    @ApiResponses(value = { @ApiResponse(responseCode = "202", description = "The user has been updated", content = @Content)})
+    @ApiResponses(value = {@ApiResponse(responseCode = "202", description = "The user has been updated", content = @Content)})
     @ResponseStatus(HttpStatus.ACCEPTED)
     ResponseEntity<ChallengeGetDto> partialUpdate(@PathVariable int id, @RequestBody JsonPatch patch) {
         return new ResponseEntity(challengeService.partialUpdate(id, patch), HttpStatus.OK);

@@ -10,5 +10,4 @@ import java.util.Optional;
 @Repository
 public interface ChallengeRepository extends PagingAndSortingRepository<Challenge, Integer> {
 
-    Optional<Challenge> findByName(String challengeName);
 }

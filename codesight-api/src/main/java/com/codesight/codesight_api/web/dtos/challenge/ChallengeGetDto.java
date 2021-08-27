@@ -1,6 +1,7 @@
 package com.codesight.codesight_api.web.dtos.challenge;
 
 import com.codesight.codesight_api.domain.challenge.entity.Difficulty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ChallengeGetDto {
 

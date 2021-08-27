@@ -2,73 +2,78 @@ package com.codesight.codesight_api.domain.challenge.service;
 
 import com.codesight.codesight_api.domain.challenge.entity.Challenge;
 import com.codesight.codesight_api.domain.challenge.repository.ChallengeRepository;
-import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeAlreadyExistsException;
 import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeNotFoundException;
 import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeIdCannotBeChangedException;
+import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.shared.IncorrectJsonMergePatchProcessingException;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengeGetDto;
-import com.codesight.codesight_api.web.mappers.ChallengeMapper;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengePostDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
+import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import org.springframework.data.domain.Pageable;
-
-import java.util.Optional;
+import java.util.ArrayList;
 
 @Service
 public class ChallengeServiceImpl implements ChallengeService {
 
     private final ChallengeRepository challengeRepository;
-    private final ChallengeMapper challengeMapper;
     private final ObjectMapper objectMapper;
 
-    public ChallengeServiceImpl(ChallengeRepository challengeRepository, ChallengeMapper challengeMapper, ObjectMapper objectMapper) {
+    public ChallengeServiceImpl(ChallengeRepository challengeRepository, ObjectMapper objectMapper) {
         this.challengeRepository = challengeRepository;
-        this.challengeMapper = challengeMapper;
         this.objectMapper = objectMapper;
     }
 
     @Override
-    public Page<ChallengeGetDto> get(int pageNumber, int pageSize, String sortBy, String direction) {
-        Sort sortOrder = Sort.by(sortBy);
-        Pageable paging;
-        switch (direction) {
-            case "DESC":
-                paging = PageRequest.of(pageNumber, pageSize, sortOrder.descending());
-                break;
-            case "ASC":
-            default: paging = PageRequest.of(pageNumber, pageSize, sortOrder.ascending());
-        }
+    public Page<ChallengeGetDto> get(Pageable pageable) {
+            Page<ChallengeGetDto> all = challengeRepository.findAll(pageable).map(challenge -> {
+                try {
+                    return getChallengeDto(challenge);
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            });
 
-        Page<ChallengeGetDto> pageResult = challengeRepository.findAll(paging).map(challengeMapper::mapChallengeToChallengeGetDto);
-
-        return pageResult;
+        return all;
     }
 
     @Override
     public ChallengeGetDto getById(int id) {
-        Optional<Challenge> challenge = challengeRepository.findById(id);
-        if (!challenge.isPresent()) {
-            throw new ChallengeNotFoundException(String.format("Challenge with id '%d' not found into DB", id));
+        try {
+            Challenge challenge = challengeRepository.findById(id).orElseThrow(() -> new ChallengeNotFoundException("Challenge with id '%d' not found into DB"));
+            return getChallengeDto(challenge);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            throw new IncorrectJsonMergePatchProcessingException("Something went wrong with the mapping to Challenge");
         }
-        return challengeMapper.mapChallengeToChallengeGetDto(challenge.get());
     }
 
     @Override
     public ChallengeGetDto create(ChallengePostDto challengePostDto) {
+        ChallengeGetDto challengeGetDto = null;
         try {
-            Challenge challenge = challengeRepository.save(challengeMapper.mapChallengePostDtoToChallenge(challengePostDto));
-            return challengeMapper.mapChallengeToChallengeGetDto(challenge);
-        } catch (Exception ex) {
-            throw new ChallengeAlreadyExistsException(String.format("Challenge with name '%s' already exists", challengePostDto.getName()));
+            String dtoAsString = objectMapper.writeValueAsString(challengePostDto);
+            Challenge challenge = objectMapper.readValue(dtoAsString, Challenge.class);
+            getChallengeDto(challengeRepository.save(challenge));
+            challengeGetDto = getChallengeDto(challenge);
+            System.out.println();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
+        return challengeGetDto;
+
+    }
+
+    private ChallengeGetDto getChallengeDto(Challenge challenge) throws JsonProcessingException {
+        String challengeAsString = objectMapper.writeValueAsString(challenge);
+        return objectMapper.readValue(challengeAsString, ChallengeGetDto.class);
     }
 
     @Override
@@ -81,46 +86,48 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     @Override
     public ChallengeGetDto update(int id, ChallengePostDto challengePostDto) {
+        ChallengeGetDto challengeGetDto = null;
         if (!challengeRepository.findById(id).isPresent()) {
             throw new ChallengeNotFoundException(String.format("Challenge with id '%d' not found into DB", id));
         }
-
-        Challenge existingChallenge = challengeMapper.mapChallengePostDtoToChallenge(challengePostDto);
-        existingChallenge.setId(id);
         try {
-            return challengeMapper.mapChallengeToChallengeGetDto(challengeRepository.save(existingChallenge));
-        } catch (Exception ex) {
-            throw new ChallengeAlreadyExistsException(String.format("Challenge with name '%s' already exists", challengePostDto.getName()));
+            Challenge existingChallenge;
+            String postDtoAsJson = objectMapper.writeValueAsString(challengePostDto);
+            existingChallenge = objectMapper.readValue(postDtoAsJson, Challenge.class);
+            existingChallenge.setId(id);
+            challengeRepository.save(existingChallenge);
+            challengeGetDto = getChallengeDto(existingChallenge);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
         }
+
+        return challengeGetDto;
     }
+
     @Override
-    public ChallengeGetDto partialUpdate(int id, JsonPatch patch) {
+    public ChallengeGetDto partialUpdate(int id, JsonMergePatch patch) {
         if (!challengeRepository.findById(id).isPresent()) {
             throw new ChallengeNotFoundException(String.format("Challenge with id '%d' not found into DB", id));
         }
         Challenge originalChallenge = challengeRepository.findById(id).get();
-        Challenge challengePatched = applyPatchToChallenge(patch, originalChallenge);
 
-        if (challengePatched.getId() != originalChallenge.getId())
-            throw new ChallengeIdCannotBeChangedException("Cannot change id on challenge!");
+        try {
+            Challenge challengePatched = applyPatchToChallenge(patch, originalChallenge);
+            challengePatched.setId(id);
 
-        challengeRepository.save(challengePatched);
-        return challengeMapper.mapChallengeToChallengeGetDto(challengeRepository.save(challengePatched));
+            if (challengePatched.getId() != originalChallenge.getId())
+                throw new ChallengeIdCannotBeChangedException("Cannot change id on challenge!");
+
+            return getChallengeDto(challengeRepository.save(challengePatched));
+        } catch (JsonPatchException | JsonProcessingException e) {
+            e.printStackTrace();
+            throw new IncorrectJsonMergePatchProcessingException("There's a problem with the format of the request, check if the passed enum exists");
+        }
+
     }
 
-    private Challenge applyPatchToChallenge(JsonPatch patch, Challenge originalChallenge) {
-        JsonNode patched = null;
-        try {
-            patched = patch.apply(objectMapper.convertValue(originalChallenge, JsonNode.class));
-        } catch (JsonPatchException e) {
-            e.printStackTrace();
-        }
-        try {
-            return objectMapper.treeToValue(patched, Challenge.class);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return null;
+    private Challenge applyPatchToChallenge(JsonMergePatch patch, Challenge originalChallenge) throws JsonPatchException, JsonProcessingException {
+        JsonNode patched = patch.apply(objectMapper.convertValue(originalChallenge, JsonNode.class));
+        return objectMapper.treeToValue(patched, Challenge.class);
     }
-
 }

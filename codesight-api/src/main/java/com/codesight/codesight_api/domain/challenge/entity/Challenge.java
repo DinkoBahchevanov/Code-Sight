@@ -4,6 +4,8 @@ import com.codesight.codesight_api.domain.BaseEntity;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
 import javax.persistence.Column;
@@ -13,6 +15,7 @@ import javax.validation.constraints.Size;
 
 @Entity
 @Table
+@JsonIgnoreProperties(value = { "id" })
 public class Challenge extends BaseEntity {
 
     private String name;
@@ -30,27 +33,27 @@ public class Challenge extends BaseEntity {
     public Challenge() {
     }
 
-    @Column(unique = true)
-    @NotNull(message = "Challenge name cannot be null")
+    @Column
+    @NotNull(message = "Challenge name is required")
     @Size(min = 2, max = 100, message = "Challenge name should be between 2 and 100 characters")
     public String getName() {
         return name;
     }
 
     @Column
-    @NotNull(message = "Description cannot be null")
+    @NotNull(message = "Description is required")
     public String getDescription() {
         return description;
     }
 
     @Column
-    @NotNull(message = "Difficulty cannot be null")
+    @NotNull(message = "Difficulty is required")
     public Difficulty getDifficulty() {
         return difficulty;
     }
 
     @Column
-    @NotNull(message = "Points cannot be null")
+    @NotNull(message = "Points is required")
     public int getPoints() {
         return points;
     }

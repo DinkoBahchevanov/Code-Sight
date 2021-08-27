@@ -2,20 +2,19 @@ package com.codesight.codesight_api.web.controllers;
 
 import com.codesight.codesight_api.domain.challenge.service.ChallengeService;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengeGetDto;
-import com.codesight.codesight_api.web.dtos.challenge.ChallengePartialDto;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengePostDto;
-import com.github.fge.jsonpatch.JsonPatch;
+import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.ArrayList;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/challenges")
@@ -27,12 +26,10 @@ public class ChallengeController {
         this.challengeService = challengeService;
     }
 
-    @GetMapping
+    @GetMapping()
     @ResponseBody
-    ResponseEntity<ArrayList<ChallengeGetDto>> get(@RequestParam(defaultValue = "0") Integer pageNo,
-                                                   @RequestParam(defaultValue = "10") Integer pageSize, @RequestParam(defaultValue = "id") String sortBy,
-                                                   @RequestParam String direction) {
-        return new ResponseEntity(challengeService.get(pageNo, pageSize, sortBy, direction), HttpStatus.OK);
+    ResponseEntity<ArrayList<ChallengeGetDto>> get(Pageable pageable) {
+        return new ResponseEntity(challengeService.get(pageable), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
@@ -63,7 +60,7 @@ public class ChallengeController {
     @Operation(description = "Updates an existing user", summary = "Updates an existing user")
     @ApiResponses(value = {@ApiResponse(responseCode = "202", description = "The user has been updated", content = @Content)})
     @ResponseStatus(HttpStatus.ACCEPTED)
-    ResponseEntity<ChallengeGetDto> partialUpdate(@PathVariable int id, @RequestBody JsonPatch patch) {
+    ResponseEntity<ChallengeGetDto> partialUpdate(@PathVariable int id, @RequestBody JsonMergePatch patch) {
         return new ResponseEntity(challengeService.partialUpdate(id, patch), HttpStatus.OK);
     }
 }

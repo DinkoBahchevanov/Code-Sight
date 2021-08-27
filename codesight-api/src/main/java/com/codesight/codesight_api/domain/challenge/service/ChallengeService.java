@@ -3,14 +3,15 @@ package com.codesight.codesight_api.domain.challenge.service;
 import com.codesight.codesight_api.domain.challenge.entity.Challenge;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengeGetDto;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengePostDto;
-import com.github.fge.jsonpatch.JsonPatch;
+import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface ChallengeService {
 
-    Page<ChallengeGetDto> get(int pageNumber, int pageSize, String sortBy, String direction);
+    Page<ChallengeGetDto> get(Pageable pageable);
 
     ChallengeGetDto create(ChallengePostDto challengeRequestDto);
 
@@ -20,5 +21,5 @@ public interface ChallengeService {
 
     ChallengeGetDto getById(int id);
 
-    ChallengeGetDto partialUpdate(int id, JsonPatch patch);
+    ChallengeGetDto partialUpdate(int id, JsonMergePatch patch);
 }

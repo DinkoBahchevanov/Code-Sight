@@ -4,6 +4,7 @@ import com.codesight.codesight_api.domain.challenge.entity.Challenge;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengeGetDto;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengePartialDto;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengePostDto;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;

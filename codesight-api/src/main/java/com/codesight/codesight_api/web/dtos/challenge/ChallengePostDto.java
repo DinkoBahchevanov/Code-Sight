@@ -1,6 +1,7 @@
 package com.codesight.codesight_api.web.dtos.challenge;
 
 import com.codesight.codesight_api.domain.challenge.entity.Difficulty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
@@ -9,9 +10,13 @@ import javax.validation.constraints.Size;
 
 public class ChallengePostDto {
 
+    @JsonProperty("name")
     private String name;
+    @JsonProperty("description")
     private String description;
+    @JsonProperty("difficulty")
     private Difficulty difficulty;
+    @JsonProperty("points")
     private Integer points;
 
     public ChallengePostDto() {

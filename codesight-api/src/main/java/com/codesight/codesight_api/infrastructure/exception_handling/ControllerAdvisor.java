@@ -1,6 +1,6 @@
 package com.codesight.codesight_api.infrastructure.exception_handling;
-import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeAlreadyExistsException;
 import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeNotFoundException;
+import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.shared.IncorrectJsonMergePatchProcessingException;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -25,13 +25,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @ControllerAdvice
 public class ControllerAdvisor extends ResponseEntityExceptionHandler {
-
-    @ExceptionHandler(ChallengeAlreadyExistsException.class)
-    public ResponseEntity<Object> handleChallengeAlreadyExistsException(
-            ChallengeAlreadyExistsException ex, HttpServletRequest httpServletRequest) {
-        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpServletRequest.getRequestURI());
-        return new ResponseEntity<>(body,BAD_REQUEST);
-    }
 
     @ExceptionHandler(ChallengeNotFoundException.class)
     public ResponseEntity<Object>  handleChallengeNotFoundException(
@@ -68,6 +61,12 @@ public class ControllerAdvisor extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(PropertyReferenceException.class)
     public ResponseEntity<Object> handlePropertyReferenceException(PropertyReferenceException ex, HttpServletRequest httpRequest){
+        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
+        return new ResponseEntity<>(body, BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IncorrectJsonMergePatchProcessingException.class)
+    public ResponseEntity<Object> handleJsonMergeProcessingException(IncorrectJsonMergePatchProcessingException ex, HttpServletRequest httpRequest){
         ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
         return new ResponseEntity<>(body, BAD_REQUEST);
     }

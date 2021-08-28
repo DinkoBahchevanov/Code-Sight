@@ -30,7 +30,7 @@ public class ChallengePostDto {
         this.points = points;
     }
 
-    @NotBlank(message = "Challenge name cannot be null")
+    @NotBlank(message = "Challenge name is required")
     @Size(min = 2, max = 100, message = "Challenge name should be between 2 and 100 characters")
     public String getName() {
         return name;
@@ -40,8 +40,7 @@ public class ChallengePostDto {
         this.name = name;
     }
 
-    @NotBlank(message = "Challenge description cannot be null")
-    @Size(min = 1)
+    @NotBlank(message = "Challenge description is required")
     public String getDescription() {
         return description;
     }
@@ -50,7 +49,7 @@ public class ChallengePostDto {
         this.description = description;
     }
 
-    @NotNull(message = "Difficulty cannot be null")
+    @NotNull(message = "Difficulty is required")
     public Difficulty getDifficulty() {
         return difficulty;
     }

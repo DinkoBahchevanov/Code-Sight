@@ -15,7 +15,6 @@ import javax.validation.constraints.Size;
 
 @Entity
 @Table
-@JsonIgnoreProperties(value = { "id" })
 public class Challenge extends BaseEntity {
 
     private String name;
@@ -30,6 +29,13 @@ public class Challenge extends BaseEntity {
         this.points = points;
     }
 
+    public Challenge(int id, String name, String description, Difficulty difficulty, int points) {
+        super.setId(id);
+        this.name = name;
+        this.description = description;
+        this.difficulty = difficulty;
+        this.points = points;
+    }
     public Challenge() {
     }
 

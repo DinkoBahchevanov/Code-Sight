@@ -1,4 +1,5 @@
 package com.codesight.codesight_api.infrastructure.exception_handling;
+import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeIdCannotBeChangedException;
 import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeNotFoundException;
 import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.shared.IncorrectJsonMergePatchProcessingException;
 import org.springframework.data.mapping.PropertyReferenceException;
@@ -67,6 +68,11 @@ public class ControllerAdvisor extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(IncorrectJsonMergePatchProcessingException.class)
     public ResponseEntity<Object> handleJsonMergeProcessingException(IncorrectJsonMergePatchProcessingException ex, HttpServletRequest httpRequest){
+        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
+        return new ResponseEntity<>(body, BAD_REQUEST);
+    }
+    @ExceptionHandler(ChallengeIdCannotBeChangedException.class)
+    public ResponseEntity<Object> handleChallengeIdCannotBeChangedException(ChallengeIdCannotBeChangedException ex, HttpServletRequest httpRequest){
         ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
         return new ResponseEntity<>(body, BAD_REQUEST);
     }

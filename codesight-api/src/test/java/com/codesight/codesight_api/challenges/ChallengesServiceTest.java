@@ -11,23 +11,31 @@ import com.codesight.codesight_api.web.dtos.challenge.ChallengePostDto;
 import com.codesight.codesight_api.web.mappers.ChallengeMapper;
 import com.codesight.codesight_api.web.mappers.ChallengeMapperImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonSerializable;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeCreator;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.*;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static com.codesight.codesight_api.domain.challenge.entity.Difficulty.EASY;
 import static com.codesight.codesight_api.domain.challenge.entity.Difficulty.HARD;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -39,200 +47,219 @@ public class ChallengesServiceTest {
     private ChallengeService challengeService;
     private ChallengeRepository challengeRepository;
     private ObjectMapper objectMapper;
-    private JsonMergePatch jsonMergePatch;
+    private ChallengeMapper challengeMapper;
 
     @BeforeEach
     void setUp() {
         challengeRepository = mock(ChallengeRepository.class);
-        jsonMergePatch = mock(JsonMergePatch.class);
         objectMapper = new ObjectMapper();
-        challengeService = new ChallengeServiceImpl(challengeRepository, objectMapper);
+        challengeMapper = new ChallengeMapperImpl();
+        challengeService = new ChallengeServiceImpl(challengeRepository, objectMapper,challengeMapper);
     }
 
-//    @Test
-//    void getShouldReturnAllChallenges() {
-//        Challenge challengePostDto1 = new Challenge("a", "aaadsd", EASY, 2);
-//        Challenge challengePostDto2 = new Challenge("aa", "aaadsa", Difficulty.MEDIUM, 2);
-//        Challenge challengePostDto3 = new Challenge("aaa", "aaasda", HARD, 2);
+    @Test
+    void getShouldReturnAllChallenges() {
+        Challenge challengePostDto1 = new Challenge("a", "aaadsd", EASY, 2);
+        Challenge challengePostDto2 = new Challenge("aa", "aaadsa", Difficulty.MEDIUM, 2);
+        Challenge challengePostDto3 = new Challenge("aaa", "aaasda", HARD, 2);
+
+        ArrayList<Challenge> list = new ArrayList<>();
+        list.add(challengePostDto1);
+        list.add(challengePostDto2);
+        list.add(challengePostDto3);
+
+        final Page<Challenge> challenges = new PageImpl<>(list);
+
+        Pageable firstPageWithTwoChallenges = PageRequest.of(0, 3, Sort.by("name").ascending());
+
+
+        when(challengeRepository.findAll(firstPageWithTwoChallenges)).thenReturn(challenges);
+
+        Page<ChallengeGetDto> returnedChallenges = challengeService.get(firstPageWithTwoChallenges);
+
+        assertEquals(challenges.getSize(), returnedChallenges.getSize());
+    }
+
+    @Test
+    void getShouldReturnOnlyTwoChallengesSortedByName() {
+        Challenge challengePostDto1 = new Challenge("a", "aaadsd", EASY, 2);
+        Challenge challengePostDto2 = new Challenge("aa", "aaadsa", Difficulty.MEDIUM, 2);
+        Challenge challengePostDto3 = new Challenge("aaa", "aaasda", HARD, 2);
+
+        ArrayList<Challenge> list = new ArrayList<>();
+        list.add(challengePostDto1);
+        list.add(challengePostDto2);
+        list.add(challengePostDto3);
+
+        Pageable firstPageWithTwoChallenges = PageRequest.of(0, 2, Sort.by("name").ascending());
+        final Page<Challenge> challenges = new PageImpl<>(list);
+
+        when(challengeRepository.findAll(firstPageWithTwoChallenges)).thenReturn(challenges);
+
+        Page<ChallengeGetDto> returnedChallenges = challengeService.get(firstPageWithTwoChallenges);
+
+        assertEquals(challenges.getSize(), returnedChallenges.getSize());
+    }
 //
-//        ArrayList<Challenge> list = new ArrayList<>();
-//        list.add(challengePostDto1);
-//        list.add(challengePostDto2);
-//        list.add(challengePostDto3);
+    @Test
+    void getShouldReturnSortedChallenges() {
+        Challenge challengePostDto1 = new Challenge("a", "aaadsd", EASY, 2);
+        Challenge challengePostDto2 = new Challenge("aa", "aaadsa", Difficulty.MEDIUM, 2);
+        Challenge challengePostDto3 = new Challenge("aaa", "aaasda", HARD, 2);
+
+        ArrayList<Challenge> list = new ArrayList<>();
+        list.add(challengePostDto1);
+        list.add(challengePostDto2);
+        list.add(challengePostDto3);
+
+        Pageable firstPageWithTwoChallenges = PageRequest.of(0, 10, Sort.by("name").descending());
+        final Page<Challenge> challenges = new PageImpl<>(list);
+
+        when(challengeRepository.findAll(firstPageWithTwoChallenges)).thenReturn(challenges);
+
+        Page<ChallengeGetDto> returnedChallenges = challengeService.get(firstPageWithTwoChallenges);
+
+        assertEquals(returnedChallenges.getContent().get(2).getName(), "aaa");
+    }
+
+    @Test
+    void getShouldNotReturnAnyUsers() {
+        ArrayList<Challenge> list = new ArrayList<>();
+
+        Pageable firstPageWithTwoChallenges = PageRequest.of(0, 10, Sort.by("name"));
+        final Page<Challenge> challenges = new PageImpl<>(list);
+
+        when(challengeRepository.findAll(firstPageWithTwoChallenges)).thenReturn(challenges);
+        Page<ChallengeGetDto> returnedChallenges = challengeService.get(firstPageWithTwoChallenges);
+        assertEquals(0, returnedChallenges.getSize());
+    }
+
+    @Test
+    void getByIdShouldReturnChallenge() {
+        Optional<Challenge> originalChallenge = Optional.of(new Challenge("baba", "baba", EASY, 2));
+        originalChallenge.get().setId(1);
+        when(challengeRepository.findById(1)).thenReturn(originalChallenge);
+
+        ChallengeGetDto expected = challengeMapper.mapChallengeToChallengeGetDto(originalChallenge.get());
+
+        assertThat(challengeService.getById(1)).usingRecursiveComparison().isEqualTo(expected);
+    }
 //
-//        Pageable firstPageWithTwoChallenges = PageRequest.of(0, 10, Sort.by("name").ascending());
-//        final Page<Challenge> challenges = new PageImpl<>(list);
+    @Test
+    void getByIdShouldThrowException() {
+        Optional<Challenge> challenge = Optional.empty();
+        when(challengeRepository.findById(1)).thenReturn(challenge);
+        assertThrows(ChallengeNotFoundException.class, () -> {
+            challengeService.getById(1);
+        });
+    }
 //
-//        when(challengeRepository.findAll(firstPageWithTwoChallenges)).thenReturn(challenges);
+    @Test
+    void deleteShouldDeleteChallenge() {
+        Challenge challenge = new Challenge("baba", "baba", EASY, 2);
+        challenge.setId(1);
+
+        when(challengeRepository.findById(1)).thenReturn(Optional.of(challenge));
+        challengeService.delete(1);
+        verify(challengeRepository).deleteById(challenge.getId());
+    }
 //
-//        Page<ChallengeGetDto> returnedChallenges = challengeService.get(0, 10, "name", "ASC");
+    @Test
+    void deleteShouldThrowException() {
+        Optional<Challenge> challenge = Optional.empty();
+        when(challengeRepository.findById(1)).thenReturn(challenge);
+        assertThrows(ChallengeNotFoundException.class, () -> {
+            challengeService.delete(1);
+        });
+    }
 //
-//        assertEquals(challenges.getSize(), returnedChallenges.getSize());
-//    }
+    @Test
+    void createShouldCreateChallenge() {
+        Challenge challenge = new Challenge("baba", "baba", EASY, 2);
+        challenge.setId(1);
+        when(challengeRepository.save(ArgumentMatchers.any(Challenge.class))).thenReturn(challenge);
+        ChallengeGetDto created = challengeService.create(new ChallengePostDto("baba", "baba", EASY, 2));
+        assertEquals(created.getName(), challenge.getName());
+    }
 //
-//    @Test
-//    void getShouldReturnOnlyTwoChallenges() {
-//        Challenge challengePostDto1 = new Challenge("a", "aaadsd", EASY, 2);
-//        Challenge challengePostDto2 = new Challenge("aa", "aaadsa", Difficulty.MEDIUM, 2);
-//        Challenge challengePostDto3 = new Challenge("aaa", "aaasda", HARD, 2);
+    @Test
+    void updateShouldUpdateChallenge() {
+        Challenge challenge = new Challenge("baba", "baba", EASY, 2);
+        challenge.setId(1);
+
+        when(challengeRepository.findById(1)).thenReturn(Optional.of(challenge));
+
+        Challenge newChallenge = new Challenge("meca", "jaba", HARD, 3);
+        newChallenge.setId(1);
+
+        when(challengeRepository.save(ArgumentMatchers.any(Challenge.class))).thenReturn(newChallenge);
+        ChallengeGetDto challengeGetDto = challengeService.update(1, new ChallengePostDto("meca", "jaba", HARD, 3));
+
+        assertThat(challengeGetDto).usingRecursiveComparison().isEqualTo(newChallenge);
+    }
 //
-//        ArrayList<Challenge> list = new ArrayList<>();
-//        list.add(challengePostDto1);
-//        list.add(challengePostDto2);
-//        list.add(challengePostDto3);
-//
-//        Pageable firstPageWithTwoChallenges = PageRequest.of(0, 2, Sort.by("name").ascending());
-//        final Page<Challenge> challenges = new PageImpl<>(list);
-//
-//        when(challengeRepository.findAll(firstPageWithTwoChallenges)).thenReturn(challenges);
-//
-//        Page<ChallengeGetDto> returnedChallenges = challengeService.get(0, 2, "name", "ASC");
-//
-//        assertEquals(challenges.getSize(), returnedChallenges.getSize());
-//    }
-//
-//    @Test
-//    void getShouldReturnSortedChallenges() {
-//        Challenge challengePostDto1 = new Challenge("a", "aaadsd", EASY, 2);
-//        Challenge challengePostDto2 = new Challenge("aa", "aaadsa", Difficulty.MEDIUM, 2);
-//        Challenge challengePostDto3 = new Challenge("aaa", "aaasda", HARD, 2);
-//
-//        ArrayList<Challenge> list = new ArrayList<>();
-//        list.add(challengePostDto1);
-//        list.add(challengePostDto2);
-//        list.add(challengePostDto3);
-//
-//        Pageable firstPageWithTwoChallenges = PageRequest.of(0, 10, Sort.by("name").descending());
-//        final Page<Challenge> challenges = new PageImpl<>(list);
-//
-//        when(challengeRepository.findAll(firstPageWithTwoChallenges)).thenReturn(challenges);
-//
-//        Page<ChallengeGetDto> returnedChallenges = challengeService.get(0, 10, "name", "DESC");
-//
-//        assertEquals(returnedChallenges.getContent().get(2).getName(), "aaa");
-//    }
-//
-//    @Test
-//    void getShouldNotReturnAnyUsers() {
-//        ArrayList<Challenge> list = new ArrayList<>();
-//
-//        Pageable firstPageWithTwoChallenges = PageRequest.of(0, 10, Sort.by("name"));
-//        final Page<Challenge> challenges = new PageImpl<>(list);
-//
-//        when(challengeRepository.findAll(firstPageWithTwoChallenges)).thenReturn(challenges);
-//        Page<ChallengeGetDto> returnedChallenges = challengeService.get(0, 10, "name", "ASC");
-//        assertEquals(0, returnedChallenges.getSize());
-//    }
-//
-//    @Test
-//    void getByIdShouldReturnChallenge() {
-//        Optional<Challenge> originalChallenge = Optional.of(new Challenge("baba", "baba", EASY, 2));
-//        originalChallenge.get().setId(1);
-//        when(challengeRepository.findById(1)).thenReturn(originalChallenge);
-//        ChallengeGetDto expected = challengeMapper.mapChallengeToChallengeGetDto(originalChallenge.get());
-//
-//        assertEquals(expected.getName(), challengeService.getById(1).getName());
-//    }
-//
-//    @Test
-//    void getByIdShouldThrowException() {
-//        Optional<Challenge> challenge = Optional.empty();
-//        when(challengeRepository.findById(1)).thenReturn(challenge);
-//        assertThrows(ChallengeNotFoundException.class, () -> {
-//            challengeService.getById(1);
-//        });
-//    }
-//
-//    @Test
-//    void deleteShouldDeleteChallenge() {
-//        Challenge challenge = new Challenge("baba", "baba", EASY, 2);
-//        challenge.setId(1);
-//
-//        when(challengeRepository.findById(1)).thenReturn(Optional.of(challenge));
-//        challengeService.delete(1);
-//        verify(challengeRepository).deleteById(challenge.getId());
-//    }
-//
-//    @Test
-//    void deleteShouldThrowException() {
-//        Optional<Challenge> challenge = Optional.empty();
-//        when(challengeRepository.findById(1)).thenReturn(challenge);
-//        assertThrows(ChallengeNotFoundException.class, () -> {
-//            challengeService.delete(1);
-//        });
-//    }
-//
-//    @Test
-//    void createShouldCreateChallenge() {
-//        Challenge challenge = new Challenge("baba", "baba", EASY, 2);
-//        challenge.setId(1);
-//        when(challengeRepository.save(ArgumentMatchers.any(Challenge.class))).thenReturn(challenge);
-//        ChallengeGetDto created = challengeService.create(new ChallengePostDto("baba", "baba", EASY, 2));
-//        assertEquals(created.getName(), challenge.getName());
-//    }
-//
-//    @Test
-//    void updateShouldUpdateChallenge() {
-//        Challenge challenge = new Challenge("baba", "baba", EASY, 2);
-//        challenge.setId(1);
-//
-//        when(challengeRepository.findById(1)).thenReturn(Optional.of(challenge));
-//
-//        Challenge newChallenge = new Challenge("meca", "jaba", HARD, 3);
-//        newChallenge.setId(1);
-//
-//        when(challengeRepository.save(ArgumentMatchers.any(Challenge.class))).thenReturn(newChallenge);
-//        ChallengeGetDto challengeGetDto = challengeService.update(1, new ChallengePostDto("baba", "baba", EASY, 2));
-//
-//        assertEquals(challengeGetDto.getName(), newChallenge.getName());
-//        assertEquals(challengeGetDto.getDescription(), newChallenge.getDescription());
-//        assertEquals(challengeGetDto.getPoints(), newChallenge.getPoints());
-//        assertEquals(challengeGetDto.getDifficulty(), newChallenge.getDifficulty());
-//    }
-//
-//    @Test
-//    void updateShouldThrowException() {
-//        when(challengeRepository.findById(1)).thenThrow(ChallengeNotFoundException.class);
-//        assertThrows(ChallengeNotFoundException.class, () -> {
-//            challengeService.update(1, new ChallengePostDto());
-//        });
-//    }
-//
-//    @Test
-//    void patchShouldThrowException() {
-////        JsonMergePatch jsonMergePatch = new JsonSerializable();
-////        when(challengeRepository.findById(1)).thenThrow(ChallengeNotFoundException.class);
-////        assertThrows(ChallengeNotFoundException.class, () -> {
-////            challengeService.partialUpdate(1, new JsonPatch(new ArrayList<>()));
-////        });
-//    }
-//
-//    @Test
-//    void patchShouldUpdateChallenge() throws JsonPatchException, JsonProcessingException {
-//
-////        JsonReader reader = Json.createReader(Challenge.class.getResourceAsStream("/challenge.json"));
-////        JsonArray jsonaArray = reader.readArray();
-////
-////        javax.json.JsonPatch patch = Json.createPatchBuilder()
-////                .replace("/0/name", "Duke Oracle")
-////                .remove("/1")
-////                .build();
-////
-////        JsonArray result = patch.apply(jsonaArray);
-////        System.out.println(result.toString());
-////
-////        Type type = new ArrayList<Challenge>() {}.getClass().getGenericSuperclass();
-////
-////        List<Challenge> person = JsonbBuilder.create().fromJson(result.toString(), type);
-////        assertEquals("Duke Oracle", person.get(0).getName());
-////        Challenge challenge = new Challenge("meca", "jaba", HARD, 3);
-////        challenge.setId(1);
-////
-////        JsonNode jsonNode = objectMapper.convertValue(challenge, JsonNode.class);
-////        when(challengeRepository.findById(1)).thenReturn(Optional.of(challenge));
-////
-////        when(this.jsonPatch.apply(objectMapper.convertValue(challenge, JsonNode.class))).thenReturn(jsonNode);
-////
-////        assertEquals(objectMapper.treeToValue(jsonNode, Challenge.class).getName(), challenge.getName());
-//    }
+    @Test
+    void updateShouldThrowException() {
+        when(challengeRepository.findById(1)).thenThrow(ChallengeNotFoundException.class);
+        assertThrows(ChallengeNotFoundException.class, () -> {
+            challengeService.update(1, new ChallengePostDto());
+        });
+    }
+
+    @Test
+    void patchShouldThrowException() throws JsonProcessingException, JsonPatchException {
+        String jsonString = "{\n" +
+                "  \"difficulty\": \"EASY\"\n" +
+                "}";
+        JsonNode jsonNode = objectMapper.readTree(jsonString);
+        JsonMergePatch patch = JsonMergePatch.fromJson(jsonNode);
+
+        when(challengeRepository.findById(1)).thenThrow(ChallengeNotFoundException.class);
+        assertThrows(ChallengeNotFoundException.class, () -> {
+            challengeService.partialUpdate(1, patch);
+        });
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideArgumentsForPatch")
+    void patchShouldUpdateChallenge(String jsonString, Challenge challengeAfterUpdate) throws JsonPatchException, JsonProcessingException {
+        JsonNode jsonNode = objectMapper.readTree(jsonString);
+        JsonMergePatch patch = JsonMergePatch.fromJson(jsonNode);
+        Challenge beforeUpdate = new Challenge("Dinko", "Bahchevanov", HARD, 3);
+        beforeUpdate.setId(1);
+
+        when(challengeRepository.findById(1)).thenReturn(Optional.of(beforeUpdate));
+        challengeService.partialUpdate(1, patch);
+
+        ArgumentCaptor<Challenge> challengeArgumentCaptor = ArgumentCaptor.forClass(Challenge.class);
+
+        verify(challengeRepository).save(challengeArgumentCaptor.capture());
+        Challenge capturedChallenge = challengeArgumentCaptor.getValue();
+
+        assertThat(capturedChallenge).usingRecursiveComparison().isEqualTo(challengeAfterUpdate);
+    }
+
+    private static List<Arguments> provideArgumentsForPatch(){
+        return List.of(
+                Arguments.of("{\n" +
+                        "  \"name\": \"JABOKA DINKO\",\n" +
+                        "  \"points\": 123\n" +
+                        "}", new Challenge(1,"JABOKA DINKO", "Bahchevanov", HARD, 123)),
+
+                Arguments.of("{\n" +
+                        "  \"description\": \"JABOK\",\n" +
+                        "  \"difficulty\": \"EASY\"\n" +
+                        "}",  new Challenge(1,"Dinko", "JABOK", EASY, 3)),
+
+                Arguments.of("{\n" +
+                        "  \"difficulty\": \"EASY\",\n" +
+                        "  \"name\": \"JABOKA DINKO\",\n" +
+                        "  \"points\": 125\n" +
+                        "}", new Challenge(1,"JABOKA DINKO", "Bahchevanov", EASY, 125)),
+
+                Arguments.of("{\n" +
+                        "  \"difficulty\": \"EASY\"\n" +
+                        "}", new Challenge(1,"Dinko", "Bahchevanov", EASY, 3))
+        );
+    }
 }

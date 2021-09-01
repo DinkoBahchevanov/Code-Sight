@@ -1,7 +1,11 @@
 package com.codesight.codesight_api.infrastructure.exception_handling;
-import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeIdCannotBeChangedException;
+
 import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeNotFoundException;
+import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.InvalidPointsRangeException;
 import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.shared.IncorrectJsonMergePatchProcessingException;
+import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.shared.IdCannotBeChangedException;
+import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.users.UserAlreadyExistsException;
+import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.users.UserNotFoundException;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,34 +19,55 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.ConstraintViolationException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.*;
 
 @ControllerAdvice
 public class ControllerAdvisor extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(ChallengeNotFoundException.class)
-    public ResponseEntity<Object>  handleChallengeNotFoundException(
-            ChallengeNotFoundException ex, HttpServletRequest httpServletRequest) {
-        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(),
-                ex.getMessage(), httpServletRequest.getRequestURI());
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Object> handleUserNotFoundException(UserNotFoundException ex, HttpServletRequest httpRequest){
+        ApiError body = new ApiError(OffsetDateTime.now(), NOT_FOUND.value(), ex.getMessage(), httpRequest.getRequestURI());
         return new ResponseEntity<>(body, NOT_FOUND);
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<Object> handleUserAlreadyExistsException(UserAlreadyExistsException ex, HttpServletRequest httpRequest){
+        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
+        return new ResponseEntity<>(body, BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IncorrectJsonMergePatchProcessingException.class)
+    public ResponseEntity<Object> handleJsonMergeProcessingException(IncorrectJsonMergePatchProcessingException ex, HttpServletRequest httpRequest){
+        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
+        return new ResponseEntity<>(body, BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IdCannotBeChangedException.class)
+    public ResponseEntity<Object> handleIdCannotBeChangedException(IdCannotBeChangedException ex, HttpServletRequest httpRequest){
+        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
+        return new ResponseEntity<>(body, BAD_REQUEST);
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<Object> handlePropertyReferenceException(PropertyReferenceException ex, HttpServletRequest httpRequest){
+        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
+        return new ResponseEntity<>(body, BAD_REQUEST);
     }
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
-        ArrayList<String> errors = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
 
-        for ( FieldError error : ex.getBindingResult().getFieldErrors()) {
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             errors.add(error.getField() + ": " + error.getDefaultMessage());
         }
-        for ( ObjectError error : ex.getBindingResult().getGlobalErrors()) {
+        for (ObjectError error : ex.getBindingResult().getGlobalErrors()) {
             errors.add(error.getObjectName() + ": " + error.getDefaultMessage());
         }
 
@@ -56,25 +81,20 @@ public class ControllerAdvisor extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object>  handleConstraintViolationException(ConstraintViolationException ex, HttpServletRequest httpServletRequest) {
         List<String> errors = new ArrayList<>();
         ex.getConstraintViolations().forEach(constraintViolation -> errors.add(constraintViolation.getMessage()));
-        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), errors, httpServletRequest.getRequestURI());
-        return new ResponseEntity<>(body, BAD_REQUEST);
+        return new ResponseEntity<>(new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(),
+                errors, httpServletRequest.getRequestURI()), BAD_REQUEST);
+    }
+    @ExceptionHandler(ChallengeNotFoundException.class)
+    public ResponseEntity<Object>  handleChallengeNotFoundException(
+            ChallengeNotFoundException ex, HttpServletRequest httpServletRequest) {
+        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(),
+                ex.getMessage(), httpServletRequest.getRequestURI());
+        return new ResponseEntity<>(body, NOT_FOUND);
     }
 
-    @ExceptionHandler(PropertyReferenceException.class)
-    public ResponseEntity<Object> handlePropertyReferenceException(PropertyReferenceException ex, HttpServletRequest httpRequest){
-        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
-        return new ResponseEntity<>(body, BAD_REQUEST);
-    }
-
-    @ExceptionHandler(IncorrectJsonMergePatchProcessingException.class)
-    public ResponseEntity<Object> handleJsonMergeProcessingException(IncorrectJsonMergePatchProcessingException ex, HttpServletRequest httpRequest){
-        ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
-        return new ResponseEntity<>(body, BAD_REQUEST);
-    }
-    @ExceptionHandler(ChallengeIdCannotBeChangedException.class)
-    public ResponseEntity<Object> handleChallengeIdCannotBeChangedException(ChallengeIdCannotBeChangedException ex, HttpServletRequest httpRequest){
+    @ExceptionHandler(InvalidPointsRangeException.class)
+    public ResponseEntity<Object> handleInvalidPointsRangeException(InvalidPointsRangeException ex, HttpServletRequest httpRequest){
         ApiError body = new ApiError(OffsetDateTime.now(), BAD_REQUEST.value(), ex.getMessage(), httpRequest.getRequestURI());
         return new ResponseEntity<>(body, BAD_REQUEST);
     }
 }
-

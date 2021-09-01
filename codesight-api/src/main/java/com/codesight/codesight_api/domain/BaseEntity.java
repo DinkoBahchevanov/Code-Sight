@@ -1,5 +1,7 @@
 package com.codesight.codesight_api.domain;
 
+import javax.persistence.Column;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.*;
 
 @MappedSuperclass
@@ -17,4 +19,5 @@ public class BaseEntity {
     public void setId(int id) {
         this.id = id;
     }
+
 }

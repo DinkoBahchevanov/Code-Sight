@@ -1,22 +1,22 @@
 package com.codesight.codesight_api.web.dtos.challenge;
 
 import com.codesight.codesight_api.domain.challenge.entity.Difficulty;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 
 public class ChallengePostDto {
 
-    @JsonProperty("name")
+    @NotBlank(message = "Challenge name field is required")
+    @Size(min = 2, max = 100, message = "Challenge name should be between 2 and 100 characters")
     private String name;
-    @JsonProperty("description")
+
+    @NotBlank(message = "Challenge description field is required")
     private String description;
-    @JsonProperty("difficulty")
+
+    @NotNull(message = "Difficulty field is required")
     private Difficulty difficulty;
-    @JsonProperty("points")
+
+    @Min(value = 1, message = "Points should not be less than 1")
+    @Max(value = 300, message = "Points should not be greater than 300")
     private Integer points;
 
     public ChallengePostDto() {
@@ -30,8 +30,7 @@ public class ChallengePostDto {
         this.points = points;
     }
 
-    @NotBlank(message = "Challenge name is required")
-    @Size(min = 2, max = 100, message = "Challenge name should be between 2 and 100 characters")
+
     public String getName() {
         return name;
     }
@@ -40,7 +39,6 @@ public class ChallengePostDto {
         this.name = name;
     }
 
-    @NotBlank(message = "Challenge description is required")
     public String getDescription() {
         return description;
     }
@@ -49,7 +47,6 @@ public class ChallengePostDto {
         this.description = description;
     }
 
-    @NotNull(message = "Difficulty is required")
     public Difficulty getDifficulty() {
         return difficulty;
     }
@@ -57,8 +54,7 @@ public class ChallengePostDto {
     public void setDifficulty(Difficulty difficulty) {
         this.difficulty = difficulty;
     }
-
-    @Min(value = 1, message = "Points should be at least with value '1'")
+    
     public int getPoints() {
         return points;
     }
@@ -66,4 +62,5 @@ public class ChallengePostDto {
     public void setPoints(int points) {
         this.points = points;
     }
+
 }

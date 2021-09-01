@@ -1,9 +1,13 @@
 package com.codesight.codesight_api.domain.challenge.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import com.codesight.codesight_api.domain.challenge.entity.Challenge;
+import com.codesight.codesight_api.domain.challenge.entity.Difficulty;
 import com.codesight.codesight_api.domain.challenge.repository.ChallengeRepository;
 import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeNotFoundException;
-import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.ChallengeIdCannotBeChangedException;
+import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.challenges.InvalidPointsRangeException;
+import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.shared.IdCannotBeChangedException;
 import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.shared.IncorrectJsonMergePatchProcessingException;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengeGetDto;
 import com.codesight.codesight_api.web.dtos.challenge.ChallengePostDto;
@@ -15,9 +19,8 @@ import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
+import static com.codesight.codesight_api.domain.challenge.entity.Difficulty.*;
 
-import java.util.Optional;
 
 @Service
 public class ChallengeServiceImpl implements ChallengeService {
@@ -26,6 +29,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     private final ObjectMapper objectMapper;
     private final ChallengeMapper challengeMapper;
 
+    @Autowired
     public ChallengeServiceImpl(ChallengeRepository challengeRepository, ObjectMapper objectMapper, ChallengeMapper challengeMapper) {
         this.challengeRepository = challengeRepository;
         this.objectMapper = objectMapper;
@@ -40,66 +44,62 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     @Override
     public ChallengeGetDto getById(int id) {
-        Optional<Challenge> challenge = challengeRepository.findById(id);
-        if (!challenge.isPresent()) {
-            throw new ChallengeNotFoundException(String.format("Challenge with id '%d' not found into DB", id));
-        }
-        return challengeMapper.mapChallengeToChallengeGetDto(challenge.get());
+        Challenge challenge = challengeRepository.findById(id).orElseThrow(() ->
+                new ChallengeNotFoundException(String.format("Challenge with id '%d' not found into DB", id)));
+
+        return challengeMapper.mapChallengeToChallengeGetDto(challenge);
     }
 
     @Override
     public ChallengeGetDto create(ChallengePostDto challengePostDto) {
+        validatePoints(challengePostDto.getPoints(), challengePostDto.getDifficulty());
         Challenge challenge = challengeRepository.save(challengeMapper.mapChallengePostDtoToChallenge(challengePostDto));
-        return challengeMapper.mapChallengeToChallengeGetDto(challenge);
 
+        return challengeMapper.mapChallengeToChallengeGetDto(challenge);
+    }
+
+    private void validatePoints(int points, Difficulty difficulty) {
+        if     ((points <= 100 && difficulty != EASY) ||
+                (points >= 101 && points <= 200 && difficulty != MEDIUM) ||
+                (points >= 201 && difficulty != HARD)) {
+            throw new InvalidPointsRangeException(points, difficulty);
+        }
     }
 
     @Override
     public void delete(int id) {
-        if (!challengeRepository.findById(id).isPresent()) {
-            throw new ChallengeNotFoundException(String.format("Challenge with id '%d' not found into DB", id));
-        }
+        challengeRepository.findById(id).orElseThrow(() ->
+                new ChallengeNotFoundException(String.format("Challenge with id '%d' not found into DB", id)));
+
         challengeRepository.deleteById(id);
     }
 
     @Override
-    public ChallengeGetDto update(int id, ChallengePostDto challengePostDto) {
-        if (!challengeRepository.findById(id).isPresent()) {
-            throw new ChallengeNotFoundException(String.format("Challenge with id '%d' not found into DB", id));
-        }
-
-        Challenge existingChallenge = challengeMapper.mapChallengePostDtoToChallenge(challengePostDto);
-        existingChallenge.setId(id);
-
-        return challengeMapper.mapChallengeToChallengeGetDto(challengeRepository.save(existingChallenge));
-    }
-
-    @Override
     public ChallengeGetDto partialUpdate(int id, JsonMergePatch patch) {
-        if (!challengeRepository.findById(id).isPresent()) {
-            throw new ChallengeNotFoundException(String.format("Challenge with id '%d' not found into DB", id));
-        }
-        Challenge originalChallenge = challengeRepository.findById(id).get();
+        Challenge originalChallenge = challengeRepository.findById(id).orElseThrow(() ->
+                new ChallengeNotFoundException(String.format("Challenge with id '%d' not found into DB", id)));
+
         Challenge challengePatched = null;
         try {
             challengePatched = applyPatchToChallenge(patch, originalChallenge);
 
-            if (challengePatched.getId() == 0) {
-                challengePatched.setId(id);
-            }
             if (challengePatched.getId() != originalChallenge.getId()) {
-                throw new ChallengeIdCannotBeChangedException("Cannot change id on challenge!");
+                throw new IdCannotBeChangedException();
             }
+
+            return challengeMapper.mapChallengeToChallengeGetDto(challengeRepository.save(challengePatched));
         } catch (JsonPatchException | JsonProcessingException e) {
             e.printStackTrace();
+            throw new IncorrectJsonMergePatchProcessingException("There's a problem with the format of the request, check if the passed enum exists");
         }
-        assert challengePatched != null;
-        return challengeMapper.mapChallengeToChallengeGetDto(challengeRepository.save(challengePatched));
-
     }
 
     private Challenge applyPatchToChallenge(JsonMergePatch patch, Challenge originalChallenge) throws JsonPatchException, JsonProcessingException {
         JsonNode patched = patch.apply(objectMapper.convertValue(originalChallenge, JsonNode.class));
+        Difficulty difficulty = Difficulty.valueOf(String.valueOf(patched.get("difficulty"))
+                .substring(1, String.valueOf(patched.get("difficulty")).length() - 1));
+        validatePoints(Integer.parseInt(String.valueOf(patched.get("points"))), difficulty);
+
         return objectMapper.treeToValue(patched, Challenge.class);
     }
 }

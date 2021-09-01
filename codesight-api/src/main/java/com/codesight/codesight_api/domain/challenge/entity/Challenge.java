@@ -1,25 +1,30 @@
 package com.codesight.codesight_api.domain.challenge.entity;
 
 import com.codesight.codesight_api.domain.BaseEntity;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.*;
-
-import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 @Entity
-@Table
 public class Challenge extends BaseEntity {
 
+    @NotNull(message = "Challenge name can't be null")
+    @Size(min = 2, max = 100, message = "Challenge name length should be between 2 and 100 characters")
     private String name;
+
+    @NotNull(message = "Description can't be null")
     private String description;
+
+    @NotNull(message = "Difficulty can't be null")
+    @Enumerated(EnumType.STRING)
     private Difficulty difficulty;
+
+    @Min(value = 1, message = "Points should not be less than 1")
+    @Max(value = 300, message = "Points should not be greater than 300")
     private int points;
 
     public Challenge(String name, String description, Difficulty difficulty, int points) {
@@ -39,27 +44,18 @@ public class Challenge extends BaseEntity {
     public Challenge() {
     }
 
-    @Column
-    @NotNull(message = "Challenge name is required")
-    @Size(min = 2, max = 100, message = "Challenge name should be between 2 and 100 characters")
     public String getName() {
         return name;
     }
 
-    @Column
-    @NotNull(message = "Description is required")
     public String getDescription() {
         return description;
     }
 
-    @Column
-    @NotNull(message = "Difficulty is required")
     public Difficulty getDifficulty() {
         return difficulty;
     }
 
-    @Column
-    @NotNull(message = "Points is required")
     public int getPoints() {
         return points;
     }
@@ -79,4 +75,5 @@ public class Challenge extends BaseEntity {
     public void setPoints(int points) {
         this.points = points;
     }
+
 }

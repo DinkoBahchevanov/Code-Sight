@@ -1,10 +1,10 @@
 package com.codesight.codesight_api.web.dtos.challenge;
 
 import com.codesight.codesight_api.domain.challenge.entity.Difficulty;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ChallengeGetDto {
 
+    private int id;
     private String name;
     private String description;
     private Difficulty difficulty;
@@ -51,4 +51,13 @@ public class ChallengeGetDto {
     public void setPoints(Integer points) {
         this.points = points;
     }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
 }

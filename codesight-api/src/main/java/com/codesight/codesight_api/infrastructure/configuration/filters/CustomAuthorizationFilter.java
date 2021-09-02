@@ -29,10 +29,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomAuthorizationFilter.class);
 
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        if (request.getServletPath().equals("/api/authenticate")) {
+        if (request.getServletPath().equals("/api/auth")) {
             filterChain.doFilter(request, response);
         }else {
             String authorizationHeader = request.getHeader(AUTHORIZATION);

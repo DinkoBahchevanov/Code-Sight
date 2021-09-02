@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.codesight.codesight_api.domain.user.repository.UserRepository;
 import com.codesight.codesight_api.domain.user.service.UserService;
+import com.codesight.codesight_api.infrastructure.exception_handling.exceptions.users.UserAuthenticationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
